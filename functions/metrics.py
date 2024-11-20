@@ -1,22 +1,31 @@
-from skimage.metrics import structural_similarity as ssim
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
 import numpy as np
 import cv2
-from torchvision import models, transforms
-from PIL import Image
-import torch
+from skimage.metrics import structural_similarity as ssim
 
-# Carregar modelo pré-treinado
-from torchvision.models import ResNet50_Weights
-model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
+# Carregar o modelo ResNet50 pré-treinado
+MODEL = ResNet50(weights="imagenet")
 
-model.eval()
-
-# Transformações necessárias para o modelo
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+def classify_image(img):
+    """
+    Classifica uma imagem usando o modelo ResNet50.
+    Retorna o rótulo da classe com maior probabilidade e a confiança (%).
+    """
+    try:
+        # Pré-processar a imagem
+        x = cv2.resize(img, (224, 224))  # Redimensionar para 224x224
+        x = x[:, :, ::-1].astype(np.float32)  # Converter de BGR para RGB
+        x = np.expand_dims(x, axis=0)  # Adicionar dimensão batch
+        x = preprocess_input(x)  # Pré-processamento específico do ResNet50
+        
+        # Fazer a predição
+        preds = MODEL.predict(x)
+        classes = decode_predictions(preds, top=1)[0]  # Retorna a classe top-1
+        label, confidence = classes[0][1], classes[0][2] * 100  # Nome e confiança (%)
+        return label, confidence
+    except Exception as e:
+        print(f"Erro na classificação: {e}")
+        return "Unknown", 0.0
 
 def calculate_ssim(original, distorted):
     # Redimensionar a imagem distorcida para combinar com a original
@@ -26,8 +35,6 @@ def calculate_ssim(original, distorted):
     original_gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
     distorted_gray = cv2.cvtColor(distorted, cv2.COLOR_BGR2GRAY)
     return ssim(original_gray, distorted_gray)
-
-
 
 def calculate_psnr(original, distorted):
     # Redimensionar a imagem distorcida para combinar com a original
@@ -39,13 +46,3 @@ def calculate_psnr(original, distorted):
         return float('inf')
     max_pixel = 255.0
     return 20 * np.log10(max_pixel / np.sqrt(mse))
-
-
-def classify_image(image):
-    # Converter imagem OpenCV para PIL
-    image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    input_tensor = transform(image_pil).unsqueeze(0)  # Adicionar dimensão batch
-    with torch.no_grad():
-        outputs = model(input_tensor)
-        _, predicted = torch.max(outputs, 1)
-    return predicted.item()  # Retorna o índice da classe prevista
