@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Ambiente virtual
+venv/
+env/
+
+# Dados e arquivos de saída
+output/
+*.csv
+
+# Configurações do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de log
+*.log
+
+# Arquivos do Jupyter (caso use notebooks no futuro)
+.ipynb_checkpoints/
+
+# Arquivos de cache do editor
+.vscode/
+.idea/
+*.swp
