@@ -11,6 +11,8 @@ env/
 # Dados e arquivos de saída
 output/
 *.csv
+imagenette2/
+*.JPEG
 
 # Configurações do sistema operacional
 .DS_Store

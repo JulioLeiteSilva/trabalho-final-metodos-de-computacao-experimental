@@ -9,10 +9,9 @@ def apply_compression(image, quality):
 def apply_resizing(image, width, height):
     return cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
 
-def apply_gaussian_noise(image, sigma):
-    noise = np.random.normal(0, sigma, image.shape).astype(np.float32)
-    noisy_image = cv2.add(image.astype(np.float32), noise)
-    return np.clip(noisy_image, 0, 255).astype(np.uint8)
+def gaussian_noise(img, mean=0, std=25):
+    noise = np.random.normal(mean, std, img.shape).astype(np.uint8)
+    return cv2.add(img, noise)
 
 def apply_canny(image):
     return cv2.Canny(image, 100, 200)

@@ -1,7 +1,9 @@
-from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
+from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
 import numpy as np
 import cv2
 from skimage.metrics import structural_similarity as ssim
+# from scipy.stats import entropy
 
 # Carregar o modelo ResNet50 pré-treinado
 MODEL = ResNet50(weights="imagenet")
@@ -28,13 +30,9 @@ def classify_image(img):
         return "Unknown", 0.0
 
 def calculate_ssim(original, distorted):
-    # Redimensionar a imagem distorcida para combinar com a original
     if original.shape != distorted.shape:
         distorted = cv2.resize(distorted, (original.shape[1], original.shape[0]), interpolation=cv2.INTER_AREA)
-    
-    original_gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
-    distorted_gray = cv2.cvtColor(distorted, cv2.COLOR_BGR2GRAY)
-    return ssim(original_gray, distorted_gray)
+    return ssim(original, distorted, channel_axis=2) * 100
 
 def calculate_psnr(original, distorted):
     # Redimensionar a imagem distorcida para combinar com a original
@@ -46,3 +44,19 @@ def calculate_psnr(original, distorted):
         return float('inf')
     max_pixel = 255.0
     return 20 * np.log10(max_pixel / np.sqrt(mse))
+
+# def calculate_entropy(image):
+#     # Calcula a entropia da imagem com base no histograma normalizado.
+#     if len(image.shape) == 3:
+#         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+#     # Calcula o histograma da imagem (256 níveis de intensidade)
+#     hist = cv2.calcHist([image], [0], None, [256], [0, 256]).flatten()
+    
+#     # Normaliza o histograma para obter uma distribuição de probabilidade
+#     hist_prob = hist / hist.sum()
+    
+#     # Calcula a entropia usando a fórmula de Shannon
+#     entropy = -np.sum(hist_prob * np.log2(hist_prob + 1e-10))  # Evita log(0) adicionando 1e-10
+    
+#     return entropy

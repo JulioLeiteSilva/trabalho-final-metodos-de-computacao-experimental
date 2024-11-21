@@ -38,11 +38,17 @@ def process_images(input_folder, output_csv, distortions):
     header.extend(distortion_columns)
 
     print(f"Iniciando o processamento de imagens na pasta: {input_folder}")
+    
+    distorted_images_dir = "distortedImages"
+    ensure_directory_exists(distorted_images_dir)
 
     for class_folder in os.listdir(input_folder):
         class_path = os.path.join(input_folder, class_folder)
         if os.path.isdir(class_path):
             print(f"Processando a classe: {class_folder}")
+            class_output_dir = os.path.join(distorted_images_dir, class_folder)
+            ensure_directory_exists(class_output_dir)
+
             for image_file in os.listdir(class_path):
                 image_path = os.path.join(class_path, image_file)
 
@@ -81,10 +87,15 @@ def process_images(input_folder, output_csv, distortions):
                     distorted_label, distorted_confidence = classify_image(distorted)
                     correct = int(distorted_label in imagenette_class_mapping)
                     row[f"{distortion_name} (SSIM)"] = ssim_score
-                    row[f"{distortion_name} (PSNR)"] = psnr_score
+                    row[f"{distortion_name} (PSNR)"] =  psnr_score
                     row[f"{distortion_name} (Identified Class)"] = distorted_label
                     row[f"{distortion_name} (Confidence)"] = distorted_confidence
                     row[f"{distortion_name} (Correct)"] = correct
+
+                    distortion_dir = os.path.join(class_output_dir, distortion_name)
+                    ensure_directory_exists(distortion_dir)
+                    distorted_image_path = os.path.join(distortion_dir, image_file)
+                    cv2.imwrite(distorted_image_path, distorted)
 
                 print(f"Imagem processada: {image_file}")
                 results.append(row)
@@ -94,10 +105,11 @@ def process_images(input_folder, output_csv, distortions):
     print(f"Resultados salvos em: {output_csv}")
 
 distortions = {
-    'Compression_60': (lambda img: apply_compression(img, 60), 'Quality=60'),
-    'Compression_10': (lambda img: apply_compression(img, 10), 'Quality=10'),
+    'Compression_70': (lambda img: apply_compression(img, 70), 'Quality=70'),
+    'Compression_20': (lambda img: apply_compression(img, 20), 'Quality=20'),
     'Resize_128x128': (lambda img: apply_resizing(img, 128, 128), 'Width=128, Height=128'),
-    'Gaussian_Noise_0.5': (lambda img: apply_gaussian_noise(img, 0.5), 'Sigma=0.5'),
+    'Gaussian_Noise_25': (lambda img: gaussian_noise(img, mean=10, std=10), 'Mean=0, Std=10'),
+    'Gaussian_Noise_50': (lambda img: gaussian_noise(img, mean=0, std=50), 'Mean=0, Std=50'),
     'Canny': (apply_canny, 'Default Parameters'),
     'Grayscale': (convert_to_grayscale, 'No Parameters'),
     'Crop_1.5': (lambda img: apply_cropping(img, 1.5), 'Zoom=1.5')
@@ -106,5 +118,5 @@ distortions = {
 assert os.path.exists('../imagenette2/train'), "Caminho para o dataset de treino não encontrado!"
 assert os.path.exists('../imagenette2/val'), "Caminho para o dataset de validação não encontrado!"
 
-process_images('../imagenette2/train', 'output/train/results.csv', distortions)
+#process_images('../imagenette2/train', 'output/train/results.csv', distortions)
 process_images('../imagenette2/val', 'output/val/results.csv', distortions)
